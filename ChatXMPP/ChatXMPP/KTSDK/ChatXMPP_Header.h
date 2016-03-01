@@ -12,8 +12,10 @@
 //用户信息
 #define KT_XMPPJid @"KT_XMPPJid"
 #define KT_XMPPPassword @"KT_XMPPPassword"
+
+#define KT_XMPPResources @"Resources"//资源名
 //服务器相关
 #define KT_XMPPDomain @""//主机名
 #define KT_XMPPIP @"000.000.0.0"//主机IP
-#define KT_XMPPResources @"Resources"//资源名
+#define KT_XMPPPort 5222 //主机端口
 #endif /* ChatXMPP_Header_h */

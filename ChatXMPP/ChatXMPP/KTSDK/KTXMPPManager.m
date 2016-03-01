@@ -102,6 +102,10 @@ static KTXMPPManager * basisManager = nil;
      */
     [_xmppStream addDelegate:self delegateQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];
     
+    
+    [_xmppStream setHostName:KT_XMPPIP];//设置主机IP
+    [_xmppStream setHostPort:KT_XMPPPort];//设置主机端口
+    
     // You may need to alter these settings depending on the server you're connecting to
     //您可能需要改变这些设置取决于您连接到的服务器
     allowSelfSignedCertificates = NO;
@@ -147,6 +151,59 @@ static KTXMPPManager * basisManager = nil;
         [self.delegate loginXMPPRsult:NO];
     }
 }
+#pragma mark -
+#pragma mark - 单点登录
+/*
+    xmpp的原理为：登陆账号(JID)的资源名重复，当两个 相同资源名 的 相同账号 同时登陆时，调用此方法；
+    如：A端： 帐号@openfire.com/ios  其中ios为资源名
+        B端： 帐号@openfire.com/ios  其中ios为资源名
+        此时会调用此方法，
+        xmpp服务器会将新消息发送给后登陆服务器的客户端，如果同一帐号的资源名不相同，则不会掉用词方法，两个帐号会同时在线，发送消息时，指定接受消息的帐号的资源名，会根据资源名指定推送，如果不加人资源名，则随机发送
+ */
+- (void)xmppStream:(XMPPStream *)sender didReceiveError:(id)error
+{
+    NSLog(@"登陆冲突=====:%@",error);
+    DDXMLNode *errorNode = (DDXMLNode *)error;
+    //遍历错误节点
+    for(DDXMLNode *node in [errorNode children]){
+        //若错误节点有【冲突】
+        if([[node name] isEqualToString:@"conflict"]){
+            [self disconnect];
+            //程序运行在后台，发送本地通知
+            if ([[UIApplication sharedApplication] applicationState] !=UIApplicationStateActive) {
+                UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+                localNotification.alertAction = @"确定";
+                localNotification.alertBody = [NSString stringWithFormat:@"你的账号已在其他地方登录，本地已经下线。"];//通知主体
+                
+                [localNotification setSoundName:UILocalNotificationDefaultSoundName]; //通知声音
+                
+                [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];//发送通知
+                
+            }
+            //回调方法
+            if ([self.delegate respondsToSelector:@selector(aloneLoginXMPP)]) {
+                [self.delegate aloneLoginXMPP];
+            }
+        }
+    }
+}
+//离线方法
+- (void)disconnect
+{
+    //发送离线消息
+    [self goOffline];
+    [_xmppStream disconnect];
+    //停止重连
+    [_xmppReconnect setAutoReconnect:NO];
+}
+//发送离线状态
+- (void)goOffline
+{
+    XMPPPresence *presence = [XMPPPresence presenceWithType:@"unavailable"];
+    
+    [_xmppStream sendElement:presence];
+}
+
 #pragma mark -
 #pragma mark - 服务器交互
 -(void)goOnline

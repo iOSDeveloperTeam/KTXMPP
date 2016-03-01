@@ -23,7 +23,8 @@
 @protocol KTXMPPManagerDelegate <NSObject>
 //登陆xmpp的结果
 - (void)loginXMPPRsult:(BOOL)ret;
-
+//单点登陆
+- (void)aloneLoginXMPP;
 
 @end
 @interface KTXMPPManager : NSObject
