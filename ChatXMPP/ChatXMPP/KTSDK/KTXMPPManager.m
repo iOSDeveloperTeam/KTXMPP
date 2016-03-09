@@ -45,13 +45,12 @@ static KTXMPPManager * basisManager = nil;
 }
 #pragma mark - 
 #pragma mark - public
-//登录
-- (void)loginXMPP
+//连接
+- (BOOL)connect
 {
-    isRegister = NO;
     if (![_xmppStream isDisconnected])//如果xmpp未断开链接
     {
-        return ;
+        return YES;
     }
     //1.从userdefaults中提取账户和密码，所以在登录APP的时候需要记录用户的账户和密码
     //xmpp中Jid为我们俗称的账号ID
@@ -61,7 +60,7 @@ static KTXMPPManager * basisManager = nil;
     if (0 == myJid.length || 0 == myPassword.length) {
         UIAlertView * alertView = [[UIAlertView alloc]initWithTitle:@"警告" message:@"请检查是否输入了用户名或密码" delegate:self cancelButtonTitle:@"确定" otherButtonTitles: nil];
         [alertView show];
-        return ;
+        return NO;
     }
     //设置xmpp流的帐号，domain为主机名(非iP地址)，resource资源名：用于区分用户
     [_xmppStream setMyJID:[XMPPJID jidWithUser:myJid domain:KT_XMPPDomain resource:KT_XMPPResources]];
@@ -79,9 +78,16 @@ static KTXMPPManager * basisManager = nil;
         UIAlertView*al=[[UIAlertView alloc]initWithTitle:@"服务器连接失败" message:nil delegate:self cancelButtonTitle:@"ok" otherButtonTitles: nil];
         [al show];
         
-        return ;
+        return NO;
     }
-
+    return YES;
+}
+//登录
+- (void)loginXMPP
+{
+    isRegister = NO;
+    //先 连接服务器 再 认证用户米密码
+    [self connect];
 }
 //注册
 -(void)registerXMPP
@@ -91,7 +97,8 @@ static KTXMPPManager * basisManager = nil;
             的不同之处:登录在连接成功后验证密码，而注册为注册用户
  */
     isRegister = YES;
-    [self loginXMPP];
+    //先 连接服务器 再 注册用户密码
+    [self connect];
 }
 
 #pragma mark - 
