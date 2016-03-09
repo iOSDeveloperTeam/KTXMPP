@@ -23,6 +23,8 @@
 @protocol KTXMPPManagerDelegate <NSObject>
 //登陆xmpp的结果
 - (void)loginXMPPRsult:(BOOL)ret;
+//注册xmpp的结果
+- (void)registerXMPPRsult:(BOOL)ret;
 //单点登陆
 - (void)aloneLoginXMPP;
 
@@ -32,5 +34,9 @@
 
 //单例
 + (KTXMPPManager *)defaultManager;
+//登录
+- (void)loginXMPP;
+//注册
+- (void)registerXMPP;
 @end
 

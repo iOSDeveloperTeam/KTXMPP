@@ -19,6 +19,8 @@
 {
     NSUserDefaults * _userDefaults;
     NSString * _myPassword;//用户密码
+    BOOL isRegister;//是否为注册
+    
     XMPPStream * _xmppStream;//xmpp主要流
     XMPPReconnect * _xmppReconnect;
     BOOL allowSelfSignedCertificates;
@@ -43,8 +45,10 @@ static KTXMPPManager * basisManager = nil;
 }
 #pragma mark - 
 #pragma mark - public
+//登录
 - (void)loginXMPP
 {
+    isRegister = NO;
     if (![_xmppStream isDisconnected])//如果xmpp未断开链接
     {
         return ;
@@ -79,6 +83,17 @@ static KTXMPPManager * basisManager = nil;
     }
 
 }
+//注册
+-(void)registerXMPP
+{
+/*
+    注册和登录的相同之处:两者都需要连接服务器
+            的不同之处:登录在连接成功后验证密码，而注册为注册用户
+ */
+    isRegister = YES;
+    [self loginXMPP];
+}
+
 #pragma mark - 
 #pragma mark - 关于xmpp的初始化
 //初始化设置xmppStream
@@ -124,12 +139,21 @@ static KTXMPPManager * basisManager = nil;
     NSLog(@"%@: %@", THIS_FILE, THIS_METHOD);
     //验证密码
     NSError *error = nil;
-    if (![_xmppStream authenticateWithPassword:_myPassword error:&error])
-    {
-        NSLog(@"Error authenticating: %@", error);
+    if (isRegister) {
+        //注册
+        if (![_xmppStream registerWithPassword:_myPassword error:&error]) {
+            NSLog(@"Error register: %@",error);
+        }
+    }else{
+        //登录
+        if (![_xmppStream authenticateWithPassword:_myPassword error:&error])
+        {
+            NSLog(@"Error authenticating: %@", error);
+        }
+
     }
 }
-//验证通过
+//登录验证通过
 - (void)xmppStreamDidAuthenticate:(XMPPStream *)sender
 {
     NSLog(@"%@: %@", THIS_FILE, THIS_METHOD);
@@ -141,7 +165,7 @@ static KTXMPPManager * basisManager = nil;
         [self.delegate loginXMPPRsult:YES];
     }
 }
-//验证错误
+//登录验证错误
 - (void)xmppStream:(XMPPStream *)sender didNotAuthenticate:(NSXMLElement *)error
 {
     NSLog(@"认证错误");
@@ -149,6 +173,21 @@ static KTXMPPManager * basisManager = nil;
     [_xmppStream disconnect];
     if ([self.delegate respondsToSelector:@selector(loginXMPPRsult:)]) {
         [self.delegate loginXMPPRsult:NO];
+    }
+}
+//注册成功
+- (void)xmppStreamDidRegister:(XMPPStream *)sender
+{
+    if ([self.delegate respondsToSelector:@selector(registerXMPPRsult:)]) {
+        [self.delegate registerXMPPRsult:YES];
+    }
+}
+//注册失败
+- (void)xmppStream:(XMPPStream *)sender didNotRegister:(DDXMLElement *)error
+{
+    NSLog(@"Error didNotRegister %@",error);
+    if ([self.delegate respondsToSelector:@selector(registerXMPPRsult:)]) {
+        [self.delegate registerXMPPRsult:NO];
     }
 }
 #pragma mark -
