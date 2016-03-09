@@ -38,5 +38,7 @@
 - (void)loginXMPP;
 //注册
 - (void)registerXMPP;
+//获得消息记录
+- (NSArray *)XMPPMessageRecordWithJid:(NSString *)Jid;
 @end
 

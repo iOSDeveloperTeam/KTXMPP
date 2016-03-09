@@ -29,7 +29,7 @@
 
 //#import "XMPPBandwidthMonitor.h"
 // 
-//#import "XMPPCoreDataStorage.h"
+#import "XMPPCoreDataStorage.h"
 //
 //#import "XMPPReconnect.h"
 //
@@ -77,3 +77,4 @@
 //#import "XMPPAutoTime.h"
 //
 //#import "XMPPElement+Delay.h"
+#import "XMPPMessageArchivingCoreDataStorage.h"

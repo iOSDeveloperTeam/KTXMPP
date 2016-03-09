@@ -10,6 +10,7 @@
 //宏
 #import "ChatXMPP_Header.h"
 //xmpp
+#import "XMPPFramework.h"//这个头文件里边的东西很重要，IM能用到的协议里边基本都包含了
 #import "XMPP.h"//Basis
 #import "XMPPReconnect.h"//连接相关
 #import "XMPPCapabilities.h"
@@ -23,6 +24,9 @@
     
     XMPPStream * _xmppStream;//xmpp主要流
     XMPPReconnect * _xmppReconnect;
+    XMPPMessageArchivingCoreDataStorage *xmppMessageArchivingCoreDataStorage;//信息列表
+    XMPPMessageArchiving *xmppMessageArchivingModule;//与上合用，消息归档
+
     BOOL allowSelfSignedCertificates;
     BOOL allowSSLHostNameMismatch;
     
@@ -100,8 +104,83 @@ static KTXMPPManager * basisManager = nil;
     //先 连接服务器 再 注册用户密码
     [self connect];
 }
+//获得消息
+-(NSArray *)XMPPMessageRecordWithJid:(NSString *)Jid
+{
+    /*
+     关于xmpp的消息存储，可由openfire服务器设置，可在openfire控制台上选择推送消息的数量，可选：全部推送或定量推送(自行设置个数)，默认为全部推送，即与某一个JID的所有聊天记录推送到客户端
+     */
+    //获得上下文
+    NSManagedObjectContext *context = [xmppMessageArchivingCoreDataStorage  mainThreadManagedObjectContext ];
+    //获得实体Entity
+    NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Message_CoreDataObject" inManagedObjectContext:context];
+    
+    //此刻需要使用的JID，要求是id＋@＋主机名
+    if (![Jid hasSuffix:KT_XMPPDomain]) {
+        Jid = [Jid stringByAppendingFormat:@"@%@",KT_XMPPDomain];
+    }
+    //自己的JID
+    NSString * myJid = [_userDefaults objectForKey:KT_XMPPJid];
+    
+    //谓词搜索当前联系人的信息
+    /*
+     bareJidStr -> 对方
+     streamBareJidStr -> 自己
+     */
+    NSPredicate*predicate=[NSPredicate predicateWithFormat:@"bareJidStr==%@&&streamBareJidStr==%@",Jid,myJid];
+    NSFetchRequest *request = [[NSFetchRequest alloc]init];
+    [request setEntity:entityDescription];
+    // 按照时间进行筛选(时间为一小时内的)
+    NSDate *endDate = [NSDate date];
+    NSTimeInterval timeInterval= [endDate timeIntervalSinceReferenceDate];
+    timeInterval -=3600;
+    NSDate *beginDate = [NSDate dateWithTimeIntervalSinceReferenceDate:timeInterval] ;
+    NSPredicate *predicate_date =[NSPredicate predicateWithFormat:@"timestamp >= %@ AND timestamp <= %@", beginDate,endDate];
+    [request setPredicate:predicate_date];//筛选时间
+    
+    [request setPredicate:predicate];//筛选条件
+    /*
+     此处还可做分页查询:(需要更改方法:增加一个参数为当前页的参数，再按照分页查询的代码
+     [request setFetchLimit:10];
+     [request setFetchOffset:currentPage*10];
+     currentPage当前页数，每页10条
+     
+     按时间排序除上面举例的方法外，还可以用：根据key排序的方法:
+     NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc]initWithKey:@"timestamp" ascending:NO];
+     NSArray * array = [NSArray arrayWithObjects:sortDescriptor, nil];
+     [request setSortDescriptors:array];
+     ascending:NO逆向排序，从大到小
+     array的意义在于如果timestamp的大小一样，可以按照第二个key来排序，将第二个NSSortDescriptor加入到array中
+     
+     */
+    NSError *error ;
+    NSArray *messages = [context executeFetchRequest:request error:&error];
+    /*
+     此时返回的messages数组中的数据类型为：XMPPMessageArchiving_Message_CoreDataObject
+     这是xmpp自带的coredata实体，可在导航栏中搜索查到，在这里简要介绍：
+     1.XMPPMessage * message -> 所有消息在xmpp中存在的方式，xml格式，可以通过此属性获得，消息内容，消息来源JID，消息去向JID，消息类型，错误消息等信息
+     message.fromStr;
+     message.toStr;
+     通过以上两个属性可以判断出消息的真实发送方和接收方(在聊天页面中使用)
+     2.NSString * messageStr -> 此条消息的字符串形式
+     3.XMPPJID * bareJid     -> 此条消息的来源JID
+     4.NSString * bareJidStr -> 此条消息的来源JID，一直为对方(上面用此熟悉做谓词搜索)
+     5.NSString * body       -> 此条消息body节点中的字符串
+     6.NSString * thread     -> 此条消息的线程（目前不知道做何用）
+     7.NSNumber * outgoing
+     BOOL isOutgoing       -> 此条消息是否为发出YES为自己发出
+     8.NSNumber * composing
+     BOOL isComposing      -> 此条消息是否已读(消息回执)
+     9.timestamp             -> 此条消息的发送时间
+     10.streamBareJidStr     -> 此条消息的接收方，一直为自己(上面用此熟悉做谓词搜索)
+     */
+    
+    
+    return messages;
 
-#pragma mark - 
+}
+
+#pragma mark -
 #pragma mark - 关于xmpp的初始化
 //初始化设置xmppStream
 -(void)setupStream
