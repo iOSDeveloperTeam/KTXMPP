@@ -16,6 +16,7 @@
 #import "XMPPCapabilities.h"
 #import "GCDAsyncSocket.h"
 #import "XMPPMessage.h"//消息相关
+#import "Photo.h"
 @implementation KTXMPPManager
 {
     NSUserDefaults * _userDefaults;
@@ -49,6 +50,10 @@ static KTXMPPManager * basisManager = nil;
 }
 #pragma mark - 
 #pragma mark - public
+-(NSManagedObjectContext *)messageManageObjectContext
+{
+    return [xmppMessageArchivingCoreDataStorage  mainThreadManagedObjectContext];
+}
 //连接
 - (BOOL)connect
 {
@@ -111,7 +116,7 @@ static KTXMPPManager * basisManager = nil;
      关于xmpp的消息存储，可由openfire服务器设置，可在openfire控制台上选择推送消息的数量，可选：全部推送或定量推送(自行设置个数)，默认为全部推送，即与某一个JID的所有聊天记录推送到客户端
      */
     //获得上下文
-    NSManagedObjectContext *context = [xmppMessageArchivingCoreDataStorage  mainThreadManagedObjectContext ];
+    NSManagedObjectContext *context = [xmppMessageArchivingCoreDataStorage  mainThreadManagedObjectContext];
     //获得实体Entity
     NSEntityDescription *entityDescription = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Message_CoreDataObject" inManagedObjectContext:context];
     
@@ -179,7 +184,51 @@ static KTXMPPManager * basisManager = nil;
     return messages;
 
 }
+-(void)sendMessage:(id)message toJid:(NSString *)jid isGroupChat:(BOOL)isGroupChat messageType:(MessageType)messageType
+{
+    /*
+     XMPP的消息发送：组成xml格式进行发送
+     */
+    XMPPMessage * mes;
+    NSString * trueMessage;
+    if (!isGroupChat) {
+        //单聊
+        mes = [XMPPMessage messageWithType:@"chat" to:[XMPPJID jidWithUser:jid domain:KT_XMPPDomain resource:KT_XMPPResources]];
+        trueMessage = [self messageElmentWith:message messageType:messageType];
+    }else{
+        
+    }
+    if (!trueMessage) {
+        //如果是不合法的消息此处直接返回，不做发送
+        if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
+            [self.delegate sendMessage:mes result:NO error:KT_Message_Error_BeNil];
+            return;
+        }
+    }
+    [mes addChild:[DDXMLNode elementWithName:@"body" stringValue:trueMessage]];
+    [_xmppStream sendElement:mes];
 
+}
+#pragma mark -
+#pragma mark - private
+- (NSString *)messageElmentWith:(id)message messageType:(MessageType)messageType{
+    UIImage * image;//图片消息备用
+    switch (messageType) {
+        case textMessage:
+            return (NSString *)message;
+            break;
+        case imageMessage:
+            image = (UIImage *)message;
+            return [self imageMessageChangeWithImage:image];
+            break;
+        case voiceeMessage:
+            return nil;
+            break;
+        default:
+            return nil;
+            break;
+    }
+}
 #pragma mark -
 #pragma mark - 关于xmpp的初始化
 //初始化设置xmppStream
@@ -213,6 +262,12 @@ static KTXMPPManager * basisManager = nil;
     allowSSLHostNameMismatch = NO;
     
     //TODO：消息模块的激活
+    xmppMessageArchivingCoreDataStorage = [XMPPMessageArchivingCoreDataStorage sharedInstance];
+    xmppMessageArchivingModule = [[XMPPMessageArchiving alloc]initWithMessageArchivingStorage:xmppMessageArchivingCoreDataStorage];
+    [xmppMessageArchivingModule setClientSideMessageArchivingOnly:YES];
+    [xmppMessageArchivingModule activate:_xmppStream];
+    [xmppMessageArchivingModule addDelegate:self delegateQueue:dispatch_get_main_queue()];
+
 }
 #pragma mark -
 #pragma mark - XMPPStreamDelegate
@@ -276,6 +331,32 @@ static KTXMPPManager * basisManager = nil;
         [self.delegate registerXMPPRsult:NO];
     }
 }
+//发送消息成功
+- (void)xmppStream:(XMPPStream *)sender didSendMessage:(XMPPMessage *)message
+{
+    //消息发送成功并不代表消息发送到对方客户端，而是服务器成功接收
+    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
+        [self.delegate sendMessage:message result:YES error:nil];
+    }
+}
+//消息发送失败
+- (void)xmppStream:(XMPPStream *)sender didFailToSendMessage:(XMPPMessage *)message error:(NSError *)error
+{
+    /*
+     消息发送失败的可能性分析：1.服务器关闭
+                           2.在群聊时，发送者可能不在群组中的可能
+                           3.与服务器断开连接
+                           ......
+     */
+    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
+        [self.delegate sendMessage:message result:NO error:error.description];
+    }
+}
+//接收消息
+- (void)xmppStream:(XMPPStream *)sender didReceiveMessage:(XMPPMessage *)message
+{
+    //TODO:可以做最近聊天记录的存储
+}
 #pragma mark -
 #pragma mark - 单点登录
 /*
@@ -337,5 +418,10 @@ static KTXMPPManager * basisManager = nil;
     [_xmppStream sendElement:presence];
     NSLog(@"发送在线状态");
 }
-
+#pragma mark - 
+#pragma mark - 辅助方法
+- (NSString *)imageMessageChangeWithImage:(UIImage *)image
+{
+    return [Photo image2String:image];//压缩并转成字符串
+}
 @end

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04E7AB6E1CA901B200FFF115 /* Photo.m in Sources */ = {isa = PBXBuildFile; fileRef = 04E7AB6D1CA901B200FFF115 /* Photo.m */; };
 		2963513D1C81BB8000B6F529 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2963513C1C81BB8000B6F529 /* main.m */; };
 		296351401C81BB8000B6F529 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 2963513F1C81BB8000B6F529 /* AppDelegate.m */; };
 		296351431C81BB8000B6F529 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 296351421C81BB8000B6F529 /* ViewController.m */; };
@@ -172,6 +173,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		04E7AB6C1CA901B200FFF115 /* Photo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Photo.h; sourceTree = "<group>"; };
+		04E7AB6D1CA901B200FFF115 /* Photo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Photo.m; sourceTree = "<group>"; };
 		296351381C81BB8000B6F529 /* ChatXMPP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChatXMPP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2963513C1C81BB8000B6F529 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		2963513E1C81BB8000B6F529 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -497,6 +500,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		04E7AB6A1CA901B200FFF115 /* 3rd */ = {
+			isa = PBXGroup;
+			children = (
+				04E7AB6B1CA901B200FFF115 /* Photo */,
+			);
+			path = 3rd;
+			sourceTree = "<group>";
+		};
+		04E7AB6B1CA901B200FFF115 /* Photo */ = {
+			isa = PBXGroup;
+			children = (
+				04E7AB6C1CA901B200FFF115 /* Photo.h */,
+				04E7AB6D1CA901B200FFF115 /* Photo.m */,
+			);
+			path = Photo;
+			sourceTree = "<group>";
+		};
 		2963512F1C81BB8000B6F529 = {
 			isa = PBXGroup;
 			children = (
@@ -1364,6 +1384,7 @@
 		2963534F1C81BFCB00B6F529 /* KTSDK */ = {
 			isa = PBXGroup;
 			children = (
+				04E7AB6A1CA901B200FFF115 /* 3rd */,
 				296353501C81C02D00B6F529 /* KTXMPPManager.h */,
 				296353511C81C02D00B6F529 /* KTXMPPManager.m */,
 				296353531C81C71700B6F529 /* ChatXMPP_Header.h */,
@@ -1614,6 +1635,7 @@
 				296353381C81BD5500B6F529 /* DDASLLogger.m in Sources */,
 				296352FF1C81BD5500B6F529 /* XMPPvCardTemp.m in Sources */,
 				296352E61C81BD5500B6F529 /* XMPPIQ+JabberRPC.m in Sources */,
+				04E7AB6E1CA901B200FFF115 /* Photo.m in Sources */,
 				296352E21C81BD5500B6F529 /* XMPPRosterMemoryStorage.m in Sources */,
 				296352F91C81BD5500B6F529 /* XMPPRoom.m in Sources */,
 				296353311C81BD5500B6F529 /* GCDMulticastDelegate.m in Sources */,
@@ -1886,6 +1908,7 @@
 				296351671C81BB8100B6F529 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		296351681C81BB8100B6F529 /* Build configuration list for PBXNativeTarget "ChatXMPPTests" */ = {
 			isa = XCConfigurationList;
@@ -1894,6 +1917,7 @@
 				2963516A1C81BB8100B6F529 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2963516B1C81BB8100B6F529 /* Build configuration list for PBXNativeTarget "ChatXMPPUITests" */ = {
 			isa = XCConfigurationList;
@@ -1902,6 +1926,7 @@
 				2963516D1C81BB8100B6F529 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

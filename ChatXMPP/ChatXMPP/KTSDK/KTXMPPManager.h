@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 /*
  *********************写在前边*************************
     旨在大家共同学习xmpp的关于IM的基本方法，暂定包括：登陆注册，单聊群聊，单点登录
@@ -20,6 +21,13 @@
           导入libxml.tbd 在header Search Paths中设置$(SDKROOT)/usr/include/libxml2(xmpp本身就是xml格式)
           xmpp需要有后台服务器配合，本次以openfire服务器为例，需要搭建，如没有后台朋友有帮助，可自行百度教程创建
  */
+
+typedef enum : NSUInteger {
+    textMessage,
+    imageMessage,
+    voiceeMessage
+} MessageType;
+@class XMPPMessage;
 @protocol KTXMPPManagerDelegate <NSObject>
 //登陆xmpp的结果
 - (void)loginXMPPRsult:(BOOL)ret;
@@ -27,10 +35,13 @@
 - (void)registerXMPPRsult:(BOOL)ret;
 //单点登陆
 - (void)aloneLoginXMPP;
+//消息发送结果
+- (void)sendMessage:(XMPPMessage *)message result:(BOOL)result error:(NSString *)errorDescribe;
 
 @end
 @interface KTXMPPManager : NSObject
 @property (nonatomic,weak)id<KTXMPPManagerDelegate>delegate;
+@property (nonatomic,readonly)NSManagedObjectContext * messageManageObjectContext;
 
 //单例
 + (KTXMPPManager *)defaultManager;
@@ -40,5 +51,7 @@
 - (void)registerXMPP;
 //获得消息记录
 - (NSArray *)XMPPMessageRecordWithJid:(NSString *)Jid;
+//发送消息
+- (void)sendMessage:(id)message toJid:(NSString *)jid isGroupChat:(BOOL)isGroupChat messageType:(MessageType)messageType;
 @end
 
